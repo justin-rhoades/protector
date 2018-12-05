@@ -20,20 +20,22 @@ if defined?(Rails)
       Protector.config.paranoid = false
     end
 
-  	it "inherits Rails config" do
+    it 'inherits Rails config' do
       Protector.config.paranoid?.should == true
       Protector.config.strong_parameters?.should == true
     end
 
-    describe "strong_parameters" do
+    describe 'strong_parameters' do
       before(:all) do
         load 'migrations/active_record.rb'
       end
 
       let(:dummy) do
         Class.new(ActiveRecord::Base) do
-          def self.model_name; ActiveModel::Name.new(self, nil, "dummy"); end
-          self.table_name = "dummies"
+          def self.model_name
+            ActiveModel::Name.new(self, nil, 'dummy')
+          end
+          self.table_name = 'dummies'
 
           protect do
             can :create, :string
@@ -46,18 +48,18 @@ if defined?(Rails)
         ActionController::Parameters.new *args
       end
 
-      it "creates" do
-        expect{ dummy.restrict!.new params(string: 'test') }.to_not raise_error
-        expect{ dummy.restrict!.create(params(string: 'test')).delete }.to_not raise_error
-        expect{ dummy.restrict!.create!(params(string: 'test')).delete }.to_not raise_error
-        expect{ dummy.restrict!.new params(number: 1) }.to raise_error
+      it 'creates' do
+        expect { dummy.restrict!.new params(string: 'test') }.to_not raise_error
+        expect { dummy.restrict!.create(params(string: 'test')).delete }.to_not raise_error
+        expect { dummy.restrict!.create!(params(string: 'test')).delete }.to_not raise_error
+        expect { dummy.restrict!.new params(number: 1) }.to raise_error(ActionController::UnpermittedParameters)
       end
 
-      it "updates" do
+      it 'updates' do
         instance = dummy.create!
 
-        expect{ instance.restrict!.assign_attributes params(string: 'test') }.to raise_error
-        expect{ instance.restrict!.assign_attributes params(number: 1) }.to_not raise_error
+        expect { instance.restrict!.assign_attributes params(string: 'test') }.to raise_error(ActionController::UnpermittedParameters)
+        expect { instance.restrict!.assign_attributes params(number: 1) }.to_not raise_error
       end
     end
   end

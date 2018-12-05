@@ -11,7 +11,7 @@ SimpleCov.start do
   add_group 'ActiveRecord', 'lib/protector/adapters/active_record'
   add_group 'Sequel',       'lib/protector/adapters/sequel'
 
-  at_exit do; end
+  at_exit { ; }
 end
 
 Bundler.require
@@ -26,11 +26,11 @@ RSpec.configure do |config|
 
   config.after(:suite) do
     if SimpleCov.running
-      silence_stream(STDOUT) do
-        SimpleCov::Formatter::HTMLFormatter.new.format(SimpleCov.result)
-      end
+      # silence_stream(STDOUT) do
+      #   SimpleCov::Formatter::HTMLFormatter.new.format(SimpleCov.result)
+      # end
 
-      SimpleCov::Formatter::SummaryFormatter.new.format(SimpleCov.result)
+      # SimpleCov::Formatter::SummaryFormatter.new.format(SimpleCov.result)
     end
   end
 
