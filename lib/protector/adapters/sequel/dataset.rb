@@ -2,8 +2,8 @@ module Protector
   module Adapters
     module Sequel
       # Patches `Sequel::Dataset`
-      module Dataset extend ActiveSupport::Concern
-
+      module Dataset
+        extend ActiveSupport::Concern
         # Wrapper for the Dataset `row_proc` adding restriction function
         class Restrictor
           attr_accessor :subject
@@ -24,10 +24,11 @@ module Protector
           end
         end
 
-        included do |klass|
+        included do |_klass|
           include Protector::DSL::Base
 
-          alias_method_chain :each, :protector
+          alias_method :each_without_protector, :each
+          alias_method :each, :each_with_protector
         end
 
         def creatable?
@@ -58,10 +59,10 @@ module Protector
         def protector_defend_graph(relation, subject)
           return relation unless @opts[:eager_graph]
 
-          @opts[:eager_graph][:reflections].each do |association, reflection|
+          @opts[:eager_graph][:reflections].each do |_association, reflection|
             model = reflection[:cache][:class] if reflection[:cache].is_a?(Hash) && reflection[:cache][:class]
-            model = reflection[:class_name].constantize unless model
-            meta  = model.protector_meta.evaluate(subject)
+            model ||= reflection[:class_name].constantize
+            meta = model.protector_meta.evaluate(subject)
 
             relation = meta.eval_scope_procs(relation) if meta.scoped?
           end

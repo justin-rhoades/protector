@@ -2,10 +2,11 @@ module Protector
   module Adapters
     module Sequel
       # Patches `Sequel::Model::Associations::EagerGraphLoader`
-      module EagerGraphLoader extend ActiveSupport::Concern
-
+      module EagerGraphLoader
+        extend ActiveSupport::Concern
         included do
-          alias_method_chain :initialize, :protector
+          alias_method :initialize_without_protector, :initialize
+          alias_method :initialize, :initialize_with_protector
         end
 
         def initialize_with_protector(dataset)

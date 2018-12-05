@@ -7,8 +7,8 @@ describe Protector::DSL do
     end
 
     it 'defines proper methods' do
-      @base.instance_methods.should include(:restrict!)
-      @base.instance_methods.should include(:protector_subject)
+      expect(@base.instance_methods).to include(:restrict!)
+      expect(@base.instance_methods).to include(:protector_subject)
     end
 
     it 'throws error for empty subect' do
@@ -24,13 +24,13 @@ describe Protector::DSL do
     it 'remembers protection subject' do
       base = @base.new
       base.restrict!('universe')
-      base.protector_subject.should == 'universe'
+      expect(base.protector_subject).to eq 'universe'
     end
 
     it 'forgets protection subject' do
       base = @base.new
       base.restrict!('universe')
-      base.protector_subject.should == 'universe'
+      expect(base.protector_subject).to eq 'universe'
       base.unrestrict!
       expect { base.protector_subject }.to raise_error(RuntimeError)
     end
@@ -39,9 +39,9 @@ describe Protector::DSL do
       base = @base.new
       base.restrict!('universe')
 
-      base.protector_subject?.should == true
+      expect(base.protector_subject?).to eq true
       Protector.insecurely do
-        base.protector_subject?.should == false
+        expect(base.protector_subject?).to eq false
       end
     end
 
@@ -74,7 +74,7 @@ describe Protector::DSL do
         protect { ; }
       end
 
-      @entry.protector_meta.should be_an_instance_of(Protector::DSL::Meta)
+      expect(@entry.protector_meta).to be_an_instance_of(Protector::DSL::Meta)
     end
   end
 

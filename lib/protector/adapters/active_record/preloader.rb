@@ -2,18 +2,14 @@ module Protector
   module Adapters
     module ActiveRecord
       # Patches `ActiveRecord::Associations::Preloader`
-      module Preloader extend ActiveSupport::Concern
-
+      module Preloader
+        extend ActiveSupport::Concern
         # Patches `ActiveRecord::Associations::Preloader::Association`
-        module Association extend ActiveSupport::Concern
+        module Association
+          extend ActiveSupport::Concern
           included do
-            # AR 4 has renamed `scoped` to `scope`
-            if method_defined?(:scope)
-              alias_method_chain :scope, :protector
-            else
-              alias_method 'scope_without_protector', 'scoped'
-              alias_method 'scoped', 'scope_with_protector'
-            end
+            alias_method :scope_without_protector, :scope
+            alias_method :scope, :scope_with_protector
           end
 
           # Gets current subject of preloading association
@@ -28,7 +24,7 @@ module Protector
           end
 
           # Restricts preloading association scope with subject of the owner
-          def scope_with_protector(*args)
+          def scope_with_protector(*_args)
             return scope_without_protector unless protector_subject?
 
             @meta ||= klass.protector_meta.evaluate(protector_subject)

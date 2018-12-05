@@ -8,10 +8,14 @@ module Protector
         included do
           include Protector::DSL::Base
 
-          alias_method_chain :exec_queries, :protector
-          alias_method_chain :new, :protector
-          alias_method_chain :create, :protector
-          alias_method_chain :create!, :protector
+          alias_method :exec_queries_without_protector, :exec_queries
+          alias_method :exec_queries, :exec_queries_with_protector
+          alias_method :new_without_protector, :new
+          alias_method :new, :new_with_protector
+          alias_method :create_without_protector, :create
+          alias_method :create, :create_with_protector
+          alias_method :create_without_protector!, :create!
+          alias_method :create!, :create_with_protector!
 
           # AR 3.2 workaround. Come on, guys... SQL parsing :(
           unless method_defined?(:references_values)
@@ -42,7 +46,7 @@ module Protector
         end
 
         def protector_relation
-          result = self.clone
+          result = clone
           result = protector_meta.eval_scope_procs(result) if protector_meta.relation
           result
         end
@@ -91,12 +95,12 @@ module Protector
 
           protector_permit_strong_params(args)
 
-          unless block_given?
-            new_without_protector(*args).restrict!(protector_subject)
-          else
+          if block_given?
             new_without_protector(*args) do |instance|
-              block.call instance.restrict!(protector_subject)
+              yield instance.restrict!(protector_subject)
             end
+          else
+            new_without_protector(*args).restrict!(protector_subject)
           end
         end
 
@@ -107,7 +111,7 @@ module Protector
 
           create_without_protector(*args) do |instance|
             instance.restrict!(protector_subject)
-            block.call(instance) if block
+            yield(instance) if block
           end
         end
 
@@ -118,7 +122,7 @@ module Protector
 
           create_without_protector!(*args) do |instance|
             instance.restrict!(protector_subject)
-            block.call(instance) if block
+            yield(instance) if block
           end
         end
 
@@ -129,7 +133,7 @@ module Protector
         # * turning `includes` (that are not referenced for eager loading) into `preload`
         # * delaying built-in preloading to the stage where selection is restricted
         # * merging current relation with restriction (of self and every eager association)
-        def exec_queries_with_protector(*args)
+        def exec_queries_with_protector(*_args)
           return @records if loaded?
           return exec_queries_without_protector unless protector_subject?
 
@@ -139,7 +143,8 @@ module Protector
 
           # Preserve associations from internal loading. We are going to handle that
           # ourselves respecting security scopes FTW!
-          associations, relation.preload_values = relation.preload_values, []
+          associations = relation.preload_values
+          relation.preload_values = []
 
           @records = relation.send(:exec_queries).each { |record| record.restrict!(subject) }
 
@@ -160,23 +165,22 @@ module Protector
         # security scope of proper class otherwise
         def protector_substitute_includes(subject, relation)
           if relation.eager_loading?
-            protector_expand_inclusion(relation.includes_values + relation.eager_load_values).each do |klass, path|
+            protector_expand_inclusion(relation.includes_values + relation.eager_load_values).each do |klass, _path|
               # AR drops default_scope for eagerly loadable associations
               # https://github.com/inossidabile/protector/issues/3
               # and so should we
               meta = klass.protector_meta.evaluate(subject)
 
-              if meta.scoped?
-                unscoped = klass.unscoped
+              next unless meta.scoped?
+              unscoped = klass.unscoped
 
-                # `unscoped` gets us a relation but Protector scope is supposed
-                # to work with AR::Base. Some versions of AR have those uncompatible
-                # so we have to workaround it :(
-                unscoped.protector_mimic_base!
+              # `unscoped` gets us a relation but Protector scope is supposed
+              # to work with AR::Base. Some versions of AR have those uncompatible
+              # so we have to workaround it :(
+              unscoped.protector_mimic_base!
 
-                # Finally we merge unscoped basic relation extended with protection scope
-                relation = relation.merge meta.eval_scope_procs(unscoped)
-              end
+              # Finally we merge unscoped basic relation extended with protection scope
+              relation = relation.merge meta.eval_scope_procs(unscoped)
             end
           else
             relation.preload_values += includes_values
@@ -235,7 +239,6 @@ module Protector
             Protector::ActiveRecord::Adapters::StrongParameters.sanitize! args, true, protector_meta
           end
         end
-
 
         def protector_expand_inclusion_hash(inclusion, results=[], base=[], klass=@klass)
           inclusion.each do |key, value|
