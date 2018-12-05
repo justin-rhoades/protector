@@ -49,10 +49,10 @@ describe Protector::DSL do
       base = @base.new
       base.restrict!('universe')
 
-      base.protector_subject?.should == true
+      expect(base.protector_subject?).to eq true
       Protector.insecurely do
         Protector.insecurely do
-          base.protector_subject?.should == false
+          expect(base.protector_subject?).to eq false
         end
       end
     end
@@ -118,14 +118,14 @@ describe Protector::DSL do
       context 'adequate', paranoid: false do
         it 'sets scoped?' do
           data = @meta.evaluate(nil, 'entry')
-          data.scoped?.should == false
+          expect(data.scoped?).to eq false
         end
       end
 
       context 'paranoid', paranoid: true do
         it 'sets scoped?' do
           data = @meta.evaluate(nil, 'entry')
-          data.scoped?.should == true
+          expect(data.scoped?).to eq true
         end
       end
 
@@ -133,7 +133,7 @@ describe Protector::DSL do
         let(:data) { @meta.evaluate('user', 'entry') }
 
         it 'sets relation' do
-          data.relation.should == 'relation'
+          expect(data.relation).to eq 'relation'
         end
 
         it 'sets access' do
@@ -154,19 +154,19 @@ describe Protector::DSL do
         end
 
         it 'marks destroyable' do
-          data.destroyable?.should == true
-          data.can?(:destroy).should == true
+          expect(data.destroyable).to eq true
+          expect(data.can?(:destroy)).to eq true
         end
 
         context 'marks updatable' do
           it 'with defaults' do
-            data.updatable?.should == true
-            data.can?(:update).should == true
+            expect(data.updatable?).to eq true
+            expect(data.can?(:update)).to eq true
           end
 
           it 'respecting lambda', dev: true do
-            data.updatable?('field5' => 5).should == true
-            data.updatable?('field5' => 3).should == false
+            expect(data.updatable?('field5' => 5)).to eq true
+            expect(data.updatable?('field5' => 3)).to eq false
           end
         end
 
