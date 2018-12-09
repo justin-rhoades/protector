@@ -17,13 +17,6 @@ module Protector
           alias_method :create_without_protector!, :create!
           alias_method :create!, :create_with_protector!
 
-          # AR 3.2 workaround. Come on, guys... SQL parsing :(
-          unless method_defined?(:references_values)
-            def references_values
-              tables_in_string(to_sql)
-            end
-          end
-
           unless method_defined?(:includes!)
             def includes!(*args)
               self.includes_values += args
@@ -144,6 +137,7 @@ module Protector
           # Preserve associations from internal loading. We are going to handle that
           # ourselves respecting security scopes FTW!
           associations = relation.preload_values
+          relation.reset
           relation.preload_values = []
 
           @records = relation.send(:exec_queries).each { |record| record.restrict!(subject) }
@@ -183,6 +177,7 @@ module Protector
               relation = relation.merge meta.eval_scope_procs(unscoped)
             end
           else
+            relation.reset
             relation.preload_values += includes_values
             relation.includes_values = []
           end

@@ -125,7 +125,7 @@ module Protector
         private
         def protector_ensure_destroyable
           return true unless protector_subject?
-          destroyable?
+          throw :abort unless destroyable?
         end
       end
     end
